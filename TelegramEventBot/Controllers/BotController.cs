@@ -14,7 +14,6 @@ namespace TelegramEventBot.Controllers
     public class BotController : ControllerBase
     {
         private readonly TelegramBotClient _botClient;
-        private readonly string _botToken;
         private readonly ILogger<BotController> _logger;
         private readonly AppDbContext _db;
         private readonly int _needToPay;
@@ -24,12 +23,12 @@ namespace TelegramEventBot.Controllers
 
         public BotController(ILogger<BotController> logger, IConfiguration configuration, AppDbContext db)
         {
-            _botToken = configuration["TelegramBotToken"]!;
+            var botToken = configuration["TelegramBotToken"]!;
             _xToken = configuration["xToken"]!;
             _accountSecret = configuration["AccountSecret"]!;
-            _needToPay = 30000;
+            _needToPay = 50000;
             _maxTickets = 200;
-            _botClient = new TelegramBotClient(_botToken);
+            _botClient = new TelegramBotClient(botToken);
             _logger = logger;
             _db = db;
         }
