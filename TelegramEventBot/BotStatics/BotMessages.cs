@@ -60,7 +60,8 @@ namespace TelegramEventBot.BotStatics
                             $"Ціна: донат від 500 грн \r\n\r\n" +
                             $"Перейди за цим посиланням:" +
                             $"https://send.monobank.ua/jar/bdHEqjRyu?t=Квиток%20№{update.Message!.From!.Id}" +
-                            $"\r\n\r\nПісля проведення оплати натисни на кнопку нижче",
+                            $"\r\n\r\nПісля проведення оплати натисни на кнопку нижче" +
+                            $"\r\n\r\n❗️Увага! Не передавай це посилання у такому вигляді іншим та не змінюй коментар при поповненні, якщо хочеш отримати квиток, дякуємо!",
                             replyMarkup: new InlineKeyboardMarkup(new[]
                             {
                                 new[]
