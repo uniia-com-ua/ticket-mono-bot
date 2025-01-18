@@ -7,7 +7,7 @@ using TelegramEventBot.BotStatics;
 namespace TelegramEventBot.Controllers
 {
     [ApiController]
-    [Route("/telegram-event-bot")]
+    [Route("/")]
     public class BotController : ControllerBase
     {
         private readonly TelegramBotClient _botClient;
