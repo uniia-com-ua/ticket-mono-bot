@@ -17,7 +17,7 @@ namespace TelegramEventBot.BotStatics
         {
             ["/start"] = SendStartMessageAsync,
             ["/ticket"] = SendTicketAsync,
-            ["/makeAdmin"] = SendMakeUserAdminConfirmAsync,
+            ["/makeUserAdmin"] = SendMakeUserAdminConfirmAsync,
         };
 
         private static readonly ConcurrentDictionary<Stage, AsyncFunctionDelegate> _stageActions = new()

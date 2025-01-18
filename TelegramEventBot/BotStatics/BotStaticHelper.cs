@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Resources;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
@@ -29,17 +30,16 @@ namespace TelegramEventBot.BotStatics
         {
             var result = await CheckStageAsync(update, dbRequest);
 
-            if (result == Stage.DoneStage)
+            if (update.Message == null || update.Message.Text == null || update.Message.Contact != null)
             {
-                return RegexEnum.Done;
-            }
-            if (result == Stage.PaymentStage && update.Message == null && update.CallbackQuery!.Data != null)
-            {
-                return RegexEnum.Payment;
-            }
-            if (result == Stage.ContactStage && update.Message!.Contact != null)
-            {
-                return RegexEnum.PhoneNum;
+                return result switch
+                {
+                    Stage.TicketStage => RegexEnum.Ticket,
+                    Stage.DoneStage => RegexEnum.Done,
+                    Stage.ContactStage => RegexEnum.PhoneNum,
+                    Stage.PaymentStage when update.CallbackQuery?.Data != null => RegexEnum.Payment,
+                    _ => RegexEnum.Null
+                };
             }
 
             return update.Message!.Text switch
@@ -47,8 +47,8 @@ namespace TelegramEventBot.BotStatics
                 _ when Regex.IsMatch(update.Message!.Text!, "^[А-Яа-яЇїІіЄєҐґA-Za-z'-]+\\s[А-Яа-яЇїІіЄєҐґA-Za-z'-]+$") && result == Stage.NameStage => RegexEnum.NameAndSurname,
                 _ when Regex.IsMatch(update.Message!.Text!, "^\\d+$") && result == Stage.AgeStage => RegexEnum.Age,
                 _ when Regex.IsMatch(update.Message!.Text!, "^\\/start\\s+([1-9]\\d*)$") && result == Stage.AdminStage => RegexEnum.Admin,
-                _ when result == Stage.TicketStage => RegexEnum.Ticket,
-                _ when result == Stage.DoneStage => RegexEnum.Done,
+/*                _ when result == Stage.TicketStage => RegexEnum.Ticket,
+                _ when result == Stage.DoneStage => RegexEnum.Done,*/
                 _ => RegexEnum.Null
             };
         }
@@ -59,7 +59,7 @@ namespace TelegramEventBot.BotStatics
 
             using var httpClient = new HttpClient();
 
-            var byteArray = await httpClient.GetByteArrayAsync($"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/event_uniia_bot?start={user!.Id}");
+            var byteArray = await httpClient.GetByteArrayAsync($"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://t.me/event_uniia_bot?start={user!.Id}");
 
             using var memoryStream = new MemoryStream(byteArray);
 
