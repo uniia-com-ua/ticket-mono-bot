@@ -1,7 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
@@ -27,7 +24,7 @@ namespace TelegramEventBot.Controllers
             _xToken = configuration["xToken"]!;
             _accountSecret = configuration["AccountSecret"]!;
             _needToPay = 50000;
-            _maxTickets = 200;
+            _maxTickets = 180;
             _botClient = new TelegramBotClient(botToken);
             _logger = logger;
             _db = db;

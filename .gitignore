@@ -398,3 +398,5 @@ FodyWeavers.xsd
 *.sln.iml
 TelegramEventBot/app.db
 *.db
+TelegramEventBot/app.db-shm
+TelegramEventBot/app.db-wal
