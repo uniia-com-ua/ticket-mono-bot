@@ -400,3 +400,5 @@ TelegramEventBot/app.db
 *.db
 TelegramEventBot/app.db-shm
 TelegramEventBot/app.db-wal
+TelegramEventBot/data/app.db-shm
+TelegramEventBot/data/app.db-wal
