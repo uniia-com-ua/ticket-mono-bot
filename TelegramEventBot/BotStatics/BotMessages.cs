@@ -2,6 +2,8 @@
 using Telegram.Bot.Types;
 using Telegram.Bot;
 using TelegramEventBot.AppDb;
+using TelegramEventBot.Models;
+using TelegramEventBot.Dtos;
 
 namespace TelegramEventBot.BotStatics
 {
@@ -96,17 +98,39 @@ namespace TelegramEventBot.BotStatics
 
             return fileId;
         }
-        public static async Task SendTicketAcceptedAsync(Update update, TelegramBotClient botClient)
+        public static async Task SendTicketAcceptedAsync(Update update, TelegramBotClient botClient, EventUserDto eventUserDto)
         {
             await botClient.SendMessage(
                             chatId: update.Message!.Chat.Id,
-                            text: $"Квиток валідний");
+                            text: $"✅ Квиток валідний");
+
+            await botClient.SendMessage(
+                chatId: update.Message!.Chat.Id,
+                text: $"\r\n\r\n Інфо про гостя:" +
+                $"\r\n\r\n ID : {eventUserDto.Id}" +
+                $"\r\n\r\n TelegramID : {eventUserDto.TelegramId}" +
+                $"\r\n\r\n Ім'я : {eventUserDto.Name}" +
+                $"\r\n\r\n Вік : {eventUserDto.Age}" +
+                $"\r\n\r\n Username : {eventUserDto.Username}" +
+                $"\r\n\r\n {eventUserDto.IsPaidMessage}" +
+                $"\r\n\r\n {eventUserDto.IsValidatedMessage}");
         }
-        public static async Task SendTicketNotAcceptedAsync(Update update, TelegramBotClient botClient)
+        public static async Task SendTicketNotAcceptedAsync(Update update, TelegramBotClient botClient, EventUserDto eventUserDto)
         {
             await botClient.SendMessage(
                             chatId: update.Message!.Chat.Id,
-                            text: $"На жаль, квиток не валідний");
+                            text: $"❌ На жаль, квиток не валідний");
+
+            await botClient.SendMessage(
+                chatId: update.Message!.Chat.Id,
+                text: $"\r\n\r\n Інфо про гостя:" +
+                $"\r\n\r\n ID : {eventUserDto.Id}" +
+                $"\r\n\r\n TelegramID : {eventUserDto.TelegramId}" +
+                $"\r\n\r\n Ім'я : {eventUserDto.Name}" +
+                $"\r\n\r\n Вік : {eventUserDto.Age}" +
+                $"\r\n\r\n Username : {eventUserDto.Username}" +
+                $"\r\n\r\n {eventUserDto.IsPaidMessage}" +
+                $"\r\n\r\n {eventUserDto.IsValidatedMessage}");
         }
         public static async Task SendSuccessfulMakingAdminAsync(Update update, TelegramBotClient botClient)
         {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Telegram.Bot.Types;
+using TelegramEventBot.Dtos;
 using TelegramEventBot.Enums;
 using TelegramEventBot.Models;
 
@@ -144,25 +145,33 @@ namespace TelegramEventBot.AppDb
 
             return user!.TicketId!;
         }
-        public async Task<bool> IsTicketValid(Update update)
+        public async Task<(bool, EventUserDto)> IsTicketValid(Update update)
         {
             var userIdStr = update.Message!.Text!.Split(" ");
 
             if (userIdStr[1] == null)
             {
-                return false;
+                return (false, new EventUserDto(null));
             }
 
             int userId = int.Parse(userIdStr[1]);
 
             var user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user != null && !string.IsNullOrEmpty(user.TicketId)) 
+            if (user != null && !string.IsNullOrEmpty(user.TicketId) && !user.TicketId.EndsWith("[VALIDATED]")) 
             {
-                return true;
+                var eventUserDto = new EventUserDto(user);
+
+                user.TicketId += "[VALIDATED]";
+
+                _db.Update(user);
+
+                await _db.SaveChangesAsync();
+
+                return (true, eventUserDto);
             }
 
-            return false;
+            return (false, new EventUserDto(user));
         }
 
         public async Task<bool> MakeUserAdminAsync(Update update)

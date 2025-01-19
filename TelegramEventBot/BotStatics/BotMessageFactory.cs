@@ -3,6 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
 using TelegramEventBot.BotExceptions;
+using TelegramEventBot.Dtos;
 using TelegramEventBot.Enums;
 
 namespace TelegramEventBot.BotStatics
@@ -153,13 +154,13 @@ namespace TelegramEventBot.BotStatics
         {
             var isValid = await _dbRequest!.IsTicketValid(update);
 
-            if (isValid)
+            if (isValid.Item1)
             {
-                await BotMessages.SendTicketAcceptedAsync(update, botClient);
+                await BotMessages.SendTicketAcceptedAsync(update, botClient, isValid.Item2);
             }
             else
             {
-                await BotMessages.SendTicketNotAcceptedAsync(update, botClient);
+                await BotMessages.SendTicketNotAcceptedAsync(update, botClient, isValid.Item2);
             }
         }
         private static async Task SendOopsRequestMessageAsync(Update update, TelegramBotClient botClient)

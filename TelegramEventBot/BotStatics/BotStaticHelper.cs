@@ -1,5 +1,4 @@
-﻿using System.Resources;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
@@ -47,8 +46,6 @@ namespace TelegramEventBot.BotStatics
                 _ when Regex.IsMatch(update.Message!.Text!, "^[А-Яа-яЇїІіЄєҐґA-Za-z'-]+\\s[А-Яа-яЇїІіЄєҐґA-Za-z'-]+$") && result == Stage.NameStage => RegexEnum.NameAndSurname,
                 _ when Regex.IsMatch(update.Message!.Text!, "^\\d+$") && result == Stage.AgeStage => RegexEnum.Age,
                 _ when Regex.IsMatch(update.Message!.Text!, "^\\/start\\s+([1-9]\\d*)$") && result == Stage.AdminStage => RegexEnum.Admin,
-/*                _ when result == Stage.TicketStage => RegexEnum.Ticket,
-                _ when result == Stage.DoneStage => RegexEnum.Done,*/
                 _ => RegexEnum.Null
             };
         }
