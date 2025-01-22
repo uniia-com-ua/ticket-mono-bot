@@ -2,7 +2,6 @@
 using Telegram.Bot.Types;
 using Telegram.Bot;
 using TelegramEventBot.AppDb;
-using TelegramEventBot.Models;
 using TelegramEventBot.Dtos;
 
 namespace TelegramEventBot.BotStatics

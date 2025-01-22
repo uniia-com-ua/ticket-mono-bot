@@ -106,7 +106,7 @@ namespace TelegramEventBot.AppDb
 
                 var searchedId = checkedUser.TelegramId.ToString();
 
-                var amountSum = transactions.Where(x => x.Comment!.Contains(searchedId)).Select(t => t.Amount).Sum();
+                var amountSum = transactions.Where(x => x.Comment != null && x.Comment!.Contains(searchedId)).Select(t => t.Amount).Sum();
 
                 if (amountSum < _needToPay)
                 {
