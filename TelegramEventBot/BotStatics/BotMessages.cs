@@ -3,6 +3,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot;
 using TelegramEventBot.AppDb;
 using TelegramEventBot.Dtos;
+using TelegramEventBot.Models;
 
 namespace TelegramEventBot.BotStatics
 {
@@ -83,7 +84,7 @@ namespace TelegramEventBot.BotStatics
                             chatId: update.Message!.Chat.Id,
                             text: $"Квитків більше не залишилось, вибачте(");
         }
-        public static async Task<string> SendTicketMessageAsync(Update update, TelegramBotClient botClient, DbRequest _dbRequest)
+        public static async Task<string> SendTicketMessageAsync(Update update, TelegramBotClient botClient, EventUserModel? user)
         {
             _=await botClient.SendMessage(
                             chatId: update.CallbackQuery!.Message!.Chat.Id,
@@ -93,9 +94,17 @@ namespace TelegramEventBot.BotStatics
                                 ResizeKeyboard = true,
                             });
 
-            var fileId = await BotStaticHelper.GenerateQRAndSendItAsync(update, _dbRequest!, botClient);
+            var fileId = await BotStaticHelper.GenerateQRAndSendItAsync(update, botClient, user);
 
             return fileId;
+        }
+        public static async Task SendCountOfPersonsMessageAsync(Update update, TelegramBotClient botClient, CountModel countModel)
+        {
+            await botClient.SendMessage(
+                            chatId: update.Message!.Chat.Id,
+                            text: $"Користувачів: {countModel.Users}" +
+                            $"\r\n\r\nПридбали квитків: {countModel.PayedUsers}" +
+                            $"\r\n\r\nНа заході: {countModel.OnEventUsers}");
         }
         public static async Task SendTicketAcceptedAsync(Update update, TelegramBotClient botClient, EventUserDto eventUserDto)
         {
@@ -111,8 +120,7 @@ namespace TelegramEventBot.BotStatics
                 $"\r\n\r\n Ім'я : {eventUserDto.Name}" +
                 $"\r\n\r\n Вік : {eventUserDto.Age}" +
                 $"\r\n\r\n Username : {eventUserDto.Username}" +
-                $"\r\n\r\n {eventUserDto.IsPaidMessage}" +
-                $"\r\n\r\n {eventUserDto.IsValidatedMessage}");
+                $"\r\n\r\n {eventUserDto.IsPaidMessage}");
         }
         public static async Task SendTicketNotAcceptedAsync(Update update, TelegramBotClient botClient, EventUserDto eventUserDto)
         {
@@ -129,7 +137,8 @@ namespace TelegramEventBot.BotStatics
                 $"\r\n\r\n Вік : {eventUserDto.Age}" +
                 $"\r\n\r\n Username : {eventUserDto.Username}" +
                 $"\r\n\r\n {eventUserDto.IsPaidMessage}" +
-                $"\r\n\r\n {eventUserDto.IsValidatedMessage}");
+                $"\r\n\r\n {eventUserDto.IsValidatedMessage}" +
+                $"\r\n\r\n Валідатор : {eventUserDto.PassedBy}");
         }
         public static async Task SendSuccessfulMakingAdminAsync(Update update, TelegramBotClient botClient)
         {

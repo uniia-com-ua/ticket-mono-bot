@@ -2,17 +2,17 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
+using TelegramEventBot.Dtos;
 using TelegramEventBot.Enums;
+using TelegramEventBot.Models;
 
 namespace TelegramEventBot.BotStatics
 {
     public static class BotStaticHelper
     {
-        public static async Task<Stage> CheckStageAsync(Update update, DbRequest dbRequest)
+        public static Stage CheckStage(EventUserModel? eventUser)
         {
-            var user = await dbRequest.GetUserDataAsync(update);
-
-            return user switch
+            return eventUser switch
             {
                 null => Stage.NullStage,
                 { IsAdmin: true } => Stage.AdminStage,
@@ -25,9 +25,9 @@ namespace TelegramEventBot.BotStatics
             };
         }
 
-        public static async Task<RegexEnum> IsMatchRegularExpressionAsync(Update update, DbRequest dbRequest)
+        public static RegexEnum IsMatchRegularExpressionAsync(Update update, EventUserModel? eventUser)
         {
-            var result = await CheckStageAsync(update, dbRequest);
+            var result = CheckStage(eventUser);
 
             if (update.Message == null || update.Message.Text == null || update.Message.Contact != null)
             {
@@ -50,10 +50,8 @@ namespace TelegramEventBot.BotStatics
             };
         }
 
-        public static async Task<string> GenerateQRAndSendItAsync(Update update, DbRequest dbRequest, TelegramBotClient botClient)
+        public static async Task<string> GenerateQRAndSendItAsync(Update update, TelegramBotClient botClient, EventUserModel? user)
         {
-            var user = await dbRequest.GetUserDataAsync(update);
-
             using var httpClient = new HttpClient();
 
             var byteArray = await httpClient.GetByteArrayAsync($"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://t.me/event_uniia_bot?start={user!.Id}");
@@ -64,7 +62,14 @@ namespace TelegramEventBot.BotStatics
 
             var sentMessage = await botClient.SendPhoto(chatId: update.CallbackQuery!.Message!.Chat.Id, photo: result);
 
-            return sentMessage.Photo![sentMessage.Photo.Length - 1].FileId;
+            return sentMessage.Photo![^1].FileId;
+        }
+        public static bool IsAdmin(EventUserModel? user)
+        {
+            if (user == null || !user.IsAdmin) 
+                return false;
+
+            return true;
         }
     }
 }

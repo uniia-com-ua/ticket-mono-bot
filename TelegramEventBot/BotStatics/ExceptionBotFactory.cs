@@ -10,7 +10,7 @@ namespace TelegramEventBot.BotExceptions
             if (string.IsNullOrEmpty(key))
                 return false;
 
-            if (key.Contains(" "))
+            if (key.Contains(' '))
             {
                 var arr = key.Split(" ");
                 var firstPart = arr[0];

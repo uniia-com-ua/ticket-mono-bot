@@ -23,8 +23,7 @@ namespace TelegramEventBot.AppDb
             _xToken=xToken;
             _maxTickets=maxTickets;
         }
-
-        public async Task MakeBlankUserAsync(Update update)
+        public async Task<EventUserModel> MakeBlankUserAsync(Update update)
         {
             var checkedUser = await _db.EventUsers.FirstOrDefaultAsync(u => u.TelegramId == update.Message!.From!.Id);
 
@@ -42,7 +41,11 @@ namespace TelegramEventBot.AppDb
                 await _db.EventUsers.AddAsync(user);
 
                 await _db.SaveChangesAsync();
+
+                return user;
             }
+
+            return checkedUser;
         }
         public async Task<bool> CheckRemainingTicketsAsync()
         {
@@ -55,36 +58,34 @@ namespace TelegramEventBot.AppDb
             return true;
         }
 
-        public async Task<UpdateUserParamStatus> UpdateUserParamAsync(Update update, RegexEnum regexEnum)
+        public async Task<UpdateUserParamStatus> UpdateUserParamAsync(Update update, RegexEnum regexEnum, EventUserModel? eventUserModel)
         {
-            var checkedUser = await GetUserDataAsync(update);
-
-            if (checkedUser == null)
+            if (eventUserModel == null)
             {
                 return UpdateUserParamStatus.NotFound;
             }
 
             if (regexEnum == RegexEnum.NameAndSurname)
             {
-                checkedUser.Name = update.Message!.Text;
+                eventUserModel.Name = update.Message!.Text;
 
-                _db.EventUsers.Update(checkedUser);
+                _db.EventUsers.Update(eventUserModel);
 
                 await _db.SaveChangesAsync();
             }
             else if (regexEnum == RegexEnum.Age)
             {
-                checkedUser.Age = int.Parse(update.Message!.Text!);
+                eventUserModel.Age = int.Parse(update.Message!.Text!);
 
-                _db.EventUsers.Update(checkedUser);
+                _db.EventUsers.Update(eventUserModel);
 
                 await _db.SaveChangesAsync();
             }
             else if (regexEnum == RegexEnum.PhoneNum)
             {
-                checkedUser.SaveFormatPhoneNumber(update.Message!.Contact!.PhoneNumber);
+                eventUserModel.SaveFormatPhoneNumber(update.Message!.Contact!.PhoneNumber);
 
-                _db.EventUsers.Update(checkedUser);
+                _db.EventUsers.Update(eventUserModel);
 
                 await _db.SaveChangesAsync();
             }
@@ -104,7 +105,7 @@ namespace TelegramEventBot.AppDb
                     return UpdateUserParamStatus.NotPaid;
                 }
 
-                var searchedId = checkedUser.TelegramId.ToString();
+                var searchedId = eventUserModel.TelegramId.ToString();
 
                 var amountSum = transactions.Where(x => x.Comment != null && x.Comment!.Contains(searchedId)).Select(t => t.Amount).Sum();
 
@@ -113,9 +114,9 @@ namespace TelegramEventBot.AppDb
                     return UpdateUserParamStatus.NotPaid;
                 }
 
-                checkedUser.IsPaid = true;
+                eventUserModel.IsPaid = true;
 
-                _db.EventUsers.Update(checkedUser);
+                _db.EventUsers.Update(eventUserModel);
 
                 await _db.SaveChangesAsync();
 
@@ -145,11 +146,11 @@ namespace TelegramEventBot.AppDb
 
             return user!.TicketId!;
         }
-        public async Task<(bool, EventUserDto)> IsTicketValid(Update update)
+        public async Task<(bool, EventUserDto)> IsTicketValid(Update update, EventUserModel? adminUser)
         {
             var userIdStr = update.Message!.Text!.Split(" ");
 
-            if (userIdStr[1] == null)
+            if (userIdStr.Length == 1)
             {
                 return (false, new EventUserDto(null));
             }
@@ -158,11 +159,11 @@ namespace TelegramEventBot.AppDb
 
             var user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user != null && !string.IsNullOrEmpty(user.TicketId) && !user.TicketId.EndsWith("[VALIDATED]")) 
+            if (user != null && !string.IsNullOrEmpty(user.TicketId) && !user.TicketId.EndsWith("VALIDATED]")) 
             {
-                var eventUserDto = new EventUserDto(user);
+                user.TicketId += $"[{adminUser!.Username}|VALIDATED]";
 
-                user.TicketId += "[VALIDATED]";
+                var eventUserDto = new EventUserDto(user);
 
                 _db.Update(user);
 
@@ -174,9 +175,12 @@ namespace TelegramEventBot.AppDb
             return (false, new EventUserDto(user));
         }
 
-        public async Task<bool> MakeUserAdminAsync(Update update)
+        public async Task<bool> MakeUserAdminAsync(Update update, EventUserModel? currentUser)
         {
-            var currentUser = await GetUserDataAsync(update);
+            if (currentUser == null)
+            {
+                return false;
+            }
 
             if (currentUser != null && !currentUser.IsAdmin)
             {
@@ -194,7 +198,7 @@ namespace TelegramEventBot.AppDb
 
             if (user == null)
             {
-                int.TryParse(userIdStr[1], out var userId);
+                _=int.TryParse(userIdStr[1], out var userId);
 
                 user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Id == userId);
             }
@@ -213,15 +217,31 @@ namespace TelegramEventBot.AppDb
             return false;
         }
 
-        public async Task SaveTicketIdForUserAsync(Update update, string ticketId)
+        public async Task SaveTicketIdForUserAsync(string ticketId, EventUserModel? user)
         {
-            var user = await GetUserDataAsync(update);
+            if (user != null)
+            {
+                user.TicketId = ticketId;
 
-            user!.TicketId = ticketId;
+                _db.EventUsers.Update(user);
 
-            _db.EventUsers.Update(user);
+                await _db.SaveChangesAsync();
+            }
+        }
 
-            await _db.SaveChangesAsync();
+        public async Task<CountModel> FillCountModelAsync()
+        {
+            return new CountModel()
+            {
+                Users = await _db.EventUsers
+                                 .CountAsync(),
+                PayedUsers = await _db.EventUsers
+                                        .Where(u => u.IsPaid)
+                                        .CountAsync(),
+                OnEventUsers = await _db.EventUsers
+                                        .Where(u => !string.IsNullOrEmpty(u.TicketId) && u.TicketId.EndsWith("VALIDATED]"))
+                                        .CountAsync(),
+            };
         }
     }
 }

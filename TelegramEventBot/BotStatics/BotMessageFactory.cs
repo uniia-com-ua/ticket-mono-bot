@@ -3,8 +3,8 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramEventBot.AppDb;
 using TelegramEventBot.BotExceptions;
-using TelegramEventBot.Dtos;
 using TelegramEventBot.Enums;
+using TelegramEventBot.Models;
 
 namespace TelegramEventBot.BotStatics
 {
@@ -14,11 +14,14 @@ namespace TelegramEventBot.BotStatics
 
         private static DbRequest? _dbRequest;
 
+        private static EventUserModel? _user;
+
         private static readonly ConcurrentDictionary<string, AsyncFunctionDelegate> _functions = new()
         {
             ["/start"] = SendStartMessageAsync,
             ["/ticket"] = SendTicketAsync,
             ["/makeUserAdmin"] = SendMakeUserAdminConfirmAsync,
+            ["/cnt"] = SendCountOfPersonsMessageAsync,
         };
 
         private static readonly ConcurrentDictionary<Stage, AsyncFunctionDelegate> _stageActions = new()
@@ -37,11 +40,13 @@ namespace TelegramEventBot.BotStatics
         {
             _dbRequest = new(appDbContext, needToPay, accountSecret, xToken, maxTickets);
 
-            var regexVal = await BotStaticHelper.IsMatchRegularExpressionAsync(update, _dbRequest);
+            _user = await _dbRequest.GetUserDataAsync(update);
+
+            var regexVal = BotStaticHelper.IsMatchRegularExpressionAsync(update, _user);
 
             if (regexVal != RegexEnum.Null && regexVal != RegexEnum.Done && regexVal != RegexEnum.Ticket)
             {
-                var status = await _dbRequest!.UpdateUserParamAsync(update, regexVal);
+                var status = await _dbRequest!.UpdateUserParamAsync(update, regexVal, _user);
 
                 if (status == UpdateUserParamStatus.NotPaid)
                 {
@@ -64,7 +69,7 @@ namespace TelegramEventBot.BotStatics
 
             if (isExist)
             {
-                if (update.Message.Text!.Contains(" "))
+                if (update.Message.Text!.Contains(' '))
                 {
                     var arr = update.Message.Text!.Split(" ");
                     var firstPart = arr[0];
@@ -89,12 +94,12 @@ namespace TelegramEventBot.BotStatics
         private static async Task SendStartMessageAsync(Update update, TelegramBotClient botClient)
         {
             await BotMessages.SendStartMessageAsync(update, botClient);
-            await _dbRequest!.MakeBlankUserAsync(update);
+            _user = await _dbRequest!.MakeBlankUserAsync(update);
             await SendAdditionalInfoMessageAsync(update, botClient);
         }
         private static async Task SendAdditionalInfoMessageAsync(Update update, TelegramBotClient botClient)
         {
-            var result = await BotStaticHelper.CheckStageAsync(update, _dbRequest!);
+            var result = BotStaticHelper.CheckStage(_user);
 
             var func = _stageActions[result];
 
@@ -129,8 +134,8 @@ namespace TelegramEventBot.BotStatics
         }
         private static async Task SendTicketWithMessageAsync(Update update, TelegramBotClient botClient)
         {
-            var ticketId = await BotMessages.SendTicketMessageAsync(update, botClient, _dbRequest!);
-            await _dbRequest!.SaveTicketIdForUserAsync(update, ticketId);
+            var ticketId = await BotMessages.SendTicketMessageAsync(update, botClient, _user);
+            await _dbRequest!.SaveTicketIdForUserAsync(ticketId, _user);
         }
         private static async Task SendTicketAsync(Update update, TelegramBotClient botClient)
         {
@@ -139,7 +144,7 @@ namespace TelegramEventBot.BotStatics
         }
         private static async Task SendMakeUserAdminConfirmAsync(Update update, TelegramBotClient botClient)
         {
-            var isSuccessful = await _dbRequest!.MakeUserAdminAsync(update);
+            var isSuccessful = await _dbRequest!.MakeUserAdminAsync(update, _user);
 
             if (isSuccessful)
             {
@@ -152,7 +157,7 @@ namespace TelegramEventBot.BotStatics
         }
         private static async Task SendCheckTicketMessageAsync(Update update, TelegramBotClient botClient)
         {
-            var isValid = await _dbRequest!.IsTicketValid(update);
+            var isValid = await _dbRequest!.IsTicketValid(update, _user);
 
             if (isValid.Item1)
             {
@@ -163,19 +168,29 @@ namespace TelegramEventBot.BotStatics
                 await BotMessages.SendTicketNotAcceptedAsync(update, botClient, isValid.Item2);
             }
         }
+        private static async Task SendCountOfPersonsMessageAsync(Update update, TelegramBotClient botClient)
+        {
+            var isAdmin = BotStaticHelper.IsAdmin(_user);
+
+            if(isAdmin)
+            {
+                var count = await _dbRequest!.FillCountModelAsync();
+                await BotMessages.SendCountOfPersonsMessageAsync(update, botClient, count);
+            }
+            else
+            {
+                await SendOopsRequestMessageAsync(update, botClient);
+            }
+        }
         private static async Task SendOopsRequestMessageAsync(Update update, TelegramBotClient botClient)
         {
             await BotMessages.SendOopsMessageAsync(update, botClient);
 
-            var result = await BotStaticHelper.CheckStageAsync(update, _dbRequest!);
+            var result = BotStaticHelper.CheckStage(_user);
 
             if (result != Stage.NullStage)
             {
                 await SendAdditionalInfoMessageAsync(update, botClient);
-            }
-            else
-            {
-                return;
             }
         }
     }
