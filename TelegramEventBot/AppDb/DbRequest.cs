@@ -229,6 +229,38 @@ namespace TelegramEventBot.AppDb
             }
         }
 
+        public async Task<bool> DeleteTicketByUserIdAsync(Update update)
+        {
+            var userIdStr = update.Message!.Text!.Split(" ");
+
+            if (userIdStr[1] == null)
+            {
+                return false;
+            }
+
+            var user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Username == userIdStr[1]);
+
+            if (user == null)
+            {
+                _=int.TryParse(userIdStr[1], out var userId);
+
+                user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Id == userId);
+            }
+
+            if (user != null)
+            {
+                user.TicketId = string.Empty;
+
+                _db.EventUsers.Update(user);
+
+                await _db.SaveChangesAsync();
+
+                return true;
+            }
+
+            return false;
+        }
+
         public async Task<CountModel> FillCountModelAsync()
         {
             return new CountModel()
@@ -242,6 +274,48 @@ namespace TelegramEventBot.AppDb
                                         .Where(u => !string.IsNullOrEmpty(u.TicketId) && u.TicketId.EndsWith("VALIDATED]"))
                                         .CountAsync(),
             };
+        }
+
+        public async Task<bool> RemoveUserAdminAsync(Update update, EventUserModel? currentUser)
+        {
+            if (currentUser == null)
+            {
+                return false;
+            }
+
+            if (currentUser != null && !currentUser.IsAdmin)
+            {
+                return false;
+            }
+
+            var userIdStr = update.Message!.Text!.Split(" ");
+
+            if (userIdStr[1] == null)
+            {
+                return false;
+            }
+
+            var user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Username == userIdStr[1]);
+
+            if (user == null)
+            {
+                _=int.TryParse(userIdStr[1], out var userId);
+
+                user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Id == userId);
+            }
+
+            if (user != null)
+            {
+                user.IsAdmin = false;
+
+                _db.EventUsers.Update(user);
+
+                await _db.SaveChangesAsync();
+
+                return true;
+            }
+
+            return false;
         }
     }
 }

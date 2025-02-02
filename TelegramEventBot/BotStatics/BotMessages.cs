@@ -152,6 +152,18 @@ namespace TelegramEventBot.BotStatics
                             chatId: update.Message!.Chat.Id,
                             text: $"Користувач не був знайдений або некоректний введення команди");
         }
+        public static async Task SendSuccessfulTicketDelAsync(Update update, TelegramBotClient botClient)
+        {
+            await botClient.SendMessage(
+                            chatId: update.Message!.Chat.Id,
+                            text: $"Квиток успішно видалено!");
+        }
+        public static async Task SendUserRemovedFromAdminsAsync(Update update, TelegramBotClient botClient)
+        {
+            await botClient.SendMessage(
+                            chatId: update.Message!.Chat.Id,
+                            text: $"Користувач тепер не адміністратор!");
+        }
         public static async Task SendTicketAsync(Update update, TelegramBotClient botClient, string fileId)
         {
             await botClient.SendPhoto(

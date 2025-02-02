@@ -22,6 +22,8 @@ namespace TelegramEventBot.BotStatics
             ["/ticket"] = SendTicketAsync,
             ["/makeUserAdmin"] = SendMakeUserAdminConfirmAsync,
             ["/cnt"] = SendCountOfPersonsMessageAsync,
+            ["/regUserTicket"] = SendRegUserTicketMessageAsync,
+            ["/removeUserAdmin"] = SendRemoveFromAdminMessageAsync,
         };
 
         private static readonly ConcurrentDictionary<Stage, AsyncFunctionDelegate> _stageActions = new()
@@ -180,6 +182,33 @@ namespace TelegramEventBot.BotStatics
             else
             {
                 await SendOopsRequestMessageAsync(update, botClient);
+            }
+        }
+        private static async Task SendRegUserTicketMessageAsync(Update update, TelegramBotClient botClient)
+        {
+            var isAdmin = BotStaticHelper.IsAdmin(_user);
+
+            if (isAdmin)
+            {
+                _ = await _dbRequest!.DeleteTicketByUserIdAsync(update);
+                await BotMessages.SendSuccessfulTicketDelAsync(update, botClient);
+            }
+            else
+            {
+                await SendOopsRequestMessageAsync(update, botClient);
+            }
+        }
+        private static async Task SendRemoveFromAdminMessageAsync(Update update, TelegramBotClient botClient)
+        {
+            var isSuccessful = await _dbRequest!.RemoveUserAdminAsync(update, _user);
+
+            if (isSuccessful)
+            {
+                await BotMessages.SendSuccessfulMakingAdminAsync(update, botClient);
+            }
+            else
+            {
+                await BotMessages.SendNotSuccessfulMakingAdminAsync(update, botClient);
             }
         }
         private static async Task SendOopsRequestMessageAsync(Update update, TelegramBotClient botClient)
