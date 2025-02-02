@@ -22,7 +22,7 @@ namespace TelegramEventBot.BotStatics
             ["/ticket"] = SendTicketAsync,
             ["/makeUserAdmin"] = SendMakeUserAdminConfirmAsync,
             ["/cnt"] = SendCountOfPersonsMessageAsync,
-            ["/regUserTicket"] = SendRegUserTicketMessageAsync,
+            ["/removeUserFromDb"] = SendRemoveUserFromDbMessageAsync,
             ["/removeUserAdmin"] = SendRemoveFromAdminMessageAsync,
         };
 
@@ -184,15 +184,14 @@ namespace TelegramEventBot.BotStatics
                 await SendOopsRequestMessageAsync(update, botClient);
             }
         }
-        private static async Task SendRegUserTicketMessageAsync(Update update, TelegramBotClient botClient)
+        private static async Task SendRemoveUserFromDbMessageAsync(Update update, TelegramBotClient botClient)
         {
             var isAdmin = BotStaticHelper.IsAdmin(_user);
 
             if (isAdmin)
             {
-                var user = await _dbRequest!.DeleteTicketByUserIdAsync(update);
-                var ticketId = await BotMessages.SendTicketMessageAsync(update, botClient, user);
-                await _dbRequest!.SaveTicketIdForUserAsync(ticketId, user);
+                _ = await _dbRequest!.DeleteUserFromDbAsync(update);
+                await BotMessages.SendSuccessfulMakingAdminAsync(update, botClient);
             }
             else
             {
