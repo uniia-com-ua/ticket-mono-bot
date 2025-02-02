@@ -190,8 +190,9 @@ namespace TelegramEventBot.BotStatics
 
             if (isAdmin)
             {
-                _ = await _dbRequest!.DeleteTicketByUserIdAsync(update);
-                await BotMessages.SendSuccessfulTicketDelAsync(update, botClient);
+                var user = await _dbRequest!.DeleteTicketByUserIdAsync(update);
+                var ticketId = await BotMessages.SendTicketMessageAsync(update, botClient, user);
+                await _dbRequest!.SaveTicketIdForUserAsync(ticketId, user);
             }
             else
             {
@@ -204,7 +205,7 @@ namespace TelegramEventBot.BotStatics
 
             if (isSuccessful)
             {
-                await BotMessages.SendSuccessfulMakingAdminAsync(update, botClient);
+                await BotMessages.SendUserRemovedFromAdminsAsync(update, botClient);
             }
             else
             {

@@ -229,13 +229,13 @@ namespace TelegramEventBot.AppDb
             }
         }
 
-        public async Task<bool> DeleteTicketByUserIdAsync(Update update)
+        public async Task<EventUserModel?> DeleteTicketByUserIdAsync(Update update)
         {
             var userIdStr = update.Message!.Text!.Split(" ");
 
             if (userIdStr[1] == null)
             {
-                return false;
+                return null;
             }
 
             var user = await _db.EventUsers.FirstOrDefaultAsync(u => u.Username == userIdStr[1]);
@@ -255,10 +255,10 @@ namespace TelegramEventBot.AppDb
 
                 await _db.SaveChangesAsync();
 
-                return true;
+                return user;
             }
 
-            return false;
+            return null;
         }
 
         public async Task<CountModel> FillCountModelAsync()
